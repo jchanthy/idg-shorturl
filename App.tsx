@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   Zap,
   ExternalLink,
   LayoutGrid,
@@ -8,21 +8,24 @@ import {
   X,
   Database,
   Smartphone,
-  ShieldAlert
+  ShieldAlert,
+  LogOut
 } from 'lucide-react';
 import { LinksList } from './components/LinksList';
 import { CreateLink } from './components/CreateLink';
+import { LoginPage, checkAuth, logout } from './components/LoginPage';
 import { getLinks, saveLink, deleteLink, recordClick, clearAllLinks } from './services/storageService';
 import { ShortLink } from './types';
 
 type AppView = 'create' | 'list';
 
 const App: React.FC = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(checkAuth);
   const [view, setView] = useState<AppView>('create');
   const [links, setLinks] = useState<ShortLink[]>([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [showInfoModal, setShowInfoModal] = useState(false);
-  
+
   // Redirection State
   const [redirectState, setRedirectState] = useState<{active: boolean; url?: string}>({ active: false });
 
@@ -77,6 +80,11 @@ const App: React.FC = () => {
     setRefreshTrigger(prev => prev + 1);
   };
 
+  // Login Screen
+  if (!isAuthenticated) {
+    return <LoginPage onLogin={() => setIsAuthenticated(true)} />;
+  }
+
   // Redirection Screen
   if (redirectState.active) {
     return (
@@ -121,7 +129,7 @@ const App: React.FC = () => {
           </div>
 
           <div className="flex items-center space-x-3">
-             <button 
+             <button
                onClick={() => setShowInfoModal(true)}
                className="p-2.5 text-gray-500 hover:bg-white hover:text-indigo-600 rounded-full transition-colors"
                title="How it works"
@@ -129,7 +137,7 @@ const App: React.FC = () => {
                <HelpCircle className="w-5 h-5" />
              </button>
 
-             <button 
+             <button
                onClick={() => setView(view === 'create' ? 'list' : 'create')}
                className="flex items-center px-4 py-2 bg-white rounded-full border border-gray-200 shadow-sm text-sm font-medium text-gray-600 hover:text-indigo-600 hover:border-indigo-200 transition-all"
              >
@@ -144,6 +152,14 @@ const App: React.FC = () => {
                    Create New
                  </>
                )}
+             </button>
+
+             <button
+               onClick={() => { logout(); setIsAuthenticated(false); }}
+               className="p-2.5 text-gray-500 hover:bg-white hover:text-red-500 rounded-full transition-colors"
+               title="Sign out"
+             >
+               <LogOut className="w-5 h-5" />
              </button>
           </div>
         </div>
