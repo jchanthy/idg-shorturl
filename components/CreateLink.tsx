@@ -43,6 +43,14 @@ export const CreateLink: React.FC<CreateLinkProps> = ({ onSave, userId, customDo
     }
   }, [customDomains]);
 
+  const setExpiryPreset = (days: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    const tzOffset = d.getTimezoneOffset() * 60000;
+    const localISOTime = (new Date(d.getTime() - tzOffset)).toISOString().slice(0, 16);
+    setExpiryDate(localISOTime);
+  };
+
   const generateRandomAlias = () => {
     return Math.random().toString(36).substring(2, 8); // generates 6 random alphanumeric chars
   };
@@ -253,14 +261,40 @@ export const CreateLink: React.FC<CreateLinkProps> = ({ onSave, userId, customDo
             <label className="block text-xs font-black text-brand-navy uppercase tracking-wider mb-2">
               Set Expiration Date (Optional)
             </label>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {[
+                { label: '1 Day', days: 1 },
+                { label: '2 Days', days: 2 },
+                { label: '3 Days', days: 3 },
+                { label: '1 Week', days: 7 },
+                { label: '1 Month', days: 30 },
+                { label: '1 Year', days: 365 },
+              ].map((preset) => (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={() => setExpiryPreset(preset.days)}
+                  className="px-3 py-1.5 bg-white border border-gray-200 text-[11px] font-bold text-gray-600 rounded-none hover:border-brand-primary hover:text-brand-primary transition-colors uppercase tracking-wide"
+                >
+                  {preset.label}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setExpiryDate('')}
+                className="px-3 py-1.5 bg-gray-200 border border-transparent text-[11px] font-bold text-gray-700 rounded-none hover:bg-gray-300 transition-colors uppercase tracking-wide"
+              >
+                Clear
+              </button>
+            </div>
             <input 
               type="datetime-local"
               value={expiryDate}
               onChange={(e) => setExpiryDate(e.target.value)}
               className="w-full px-3.5 py-2.5 bg-white border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-brand-primary rounded-none transition-colors"
             />
-            <p className="text-[10px] text-gray-400 mt-1.5">
-              Leave empty if you want this link to never expire.
+            <p className="text-[10px] text-gray-400 mt-2">
+              Use quick presets, pick a custom date/time from the calendar, or leave empty to never expire.
             </p>
           </div>
 

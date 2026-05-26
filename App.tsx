@@ -268,11 +268,8 @@ const App: React.FC = () => {
                   parent.appendChild(fallback);
                 }
               }}
-              className="max-h-12 max-w-[150px] object-contain group-hover:scale-105 transition-transform"
+              className="max-h-20 max-w-[220px] object-contain"
             />
-            <span className="text-[10px] font-bold text-gray-500 tracking-wider uppercase group-hover:text-brand-primary transition-colors">
-              idg short url
-            </span>
           </div>
 
           <div className="flex items-center space-x-3">
@@ -290,11 +287,15 @@ const App: React.FC = () => {
                  showProfile ? 'border-brand-primary scale-105 shadow-sm' : 'border-gray-200 hover:border-brand-primary'
                }`}
              >
-               {profile?.avatarUrl ? (
-                 <img src={profile.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-               ) : (
-                 <User className="w-5 h-5 text-gray-500" />
-               )}
+                {(profile?.avatarUrl || auth.currentUser?.photoURL) ? (
+                  <img 
+                    src={profile?.avatarUrl || auth.currentUser?.photoURL || ''} 
+                    alt="Avatar" 
+                    className="w-full h-full object-cover" 
+                  />
+                ) : (
+                  <User className="w-5 h-5 text-gray-500" />
+                )}
              </button>
 
              <button
@@ -311,8 +312,8 @@ const App: React.FC = () => {
       {/* Info Modal */}
       {showInfoModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 shrink-0">
               <h3 className="text-lg font-bold text-gray-900 flex items-center">
                 <ShieldAlert className="w-5 h-5 text-brand-primary mr-2" />
                 How this App Works
@@ -321,7 +322,7 @@ const App: React.FC = () => {
                 <X className="w-6 h-6" />
               </button>
             </div>
-            <div className="p-6 space-y-6">
+            <div className="p-6 space-y-6 flex-1 overflow-y-auto">
               <div className="flex items-start space-x-4">
                 <div className="p-3 bg-brand-primary/10 rounded-xl text-brand-primary">
                   <Zap className="w-6 h-6" />
@@ -370,7 +371,7 @@ const App: React.FC = () => {
                 </div>
               </div>
             </div>
-            <div className="p-6 bg-gray-50 text-center">
+            <div className="p-6 bg-gray-50 text-center shrink-0 border-t border-gray-100">
               <button 
                 onClick={() => setShowInfoModal(false)}
                 className="w-full py-3 bg-gray-900 hover:bg-black text-white rounded-none font-bold transition-colors"

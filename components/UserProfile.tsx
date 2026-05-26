@@ -14,14 +14,7 @@ interface UserProfileProps {
   onClose: () => void;
 }
 
-const PRESET_AVATARS = [
-  'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&h=150&q=80',
-  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&h=150&q=80',
-  'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=150&h=150&q=80',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&h=150&q=80',
-  'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=150&h=150&q=80',
-  'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&h=150&q=80'
-];
+
 
 export const UserProfile: React.FC<UserProfileProps> = ({
   userId,
@@ -35,7 +28,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
   
   // Tab: Profile States
   const [fullName, setFullName] = useState(profile?.fullName || auth.currentUser?.displayName || '');
-  const [avatarUrl, setAvatarUrl] = useState(profile?.avatarUrl || auth.currentUser?.photoURL || PRESET_AVATARS[0]);
+  const [avatarUrl, setAvatarUrl] = useState(profile?.avatarUrl || auth.currentUser?.photoURL || '');
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileSuccess, setProfileSuccess] = useState(false);
 
@@ -130,7 +123,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
   useEffect(() => {
     if (profile) {
       setFullName(profile.fullName || auth.currentUser?.displayName || '');
-      setAvatarUrl(profile.avatarUrl || auth.currentUser?.photoURL || PRESET_AVATARS[0]);
+      setAvatarUrl(profile.avatarUrl || auth.currentUser?.photoURL || '');
       setDomains(profile.customDomains || []);
     }
   }, [profile]);
@@ -368,20 +361,12 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                 </label>
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="w-16 h-16 bg-gray-50 border border-gray-200 rounded-none overflow-hidden flex-shrink-0 flex items-center justify-center">
-                    <img src={avatarUrl} alt="Preview Avatar" className="w-full h-full object-cover" />
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="Preview Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-8 h-8 text-gray-400" />
+                    )}
                   </div>
-                  {PRESET_AVATARS.map((url, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => setAvatarUrl(url)}
-                      className={`w-12 h-12 rounded-none border-2 transition-all ${
-                        avatarUrl === url ? 'border-brand-primary scale-105 shadow-sm' : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <img src={url} alt="Preset Avatar" className="w-full h-full object-cover" />
-                    </button>
-                  ))}
                 </div>
                 
                 {/* File Uploader */}
@@ -810,8 +795,10 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                           <div className="w-12 h-12 bg-gray-100 border border-gray-200 rounded-none overflow-hidden flex-shrink-0 flex items-center justify-center relative">
                             {isPreRegistered ? (
                               <div className="absolute inset-0 bg-brand-primary/10 flex items-center justify-center text-brand-primary font-black text-xs select-none">INV</div>
+                            ) : u.avatarUrl ? (
+                              <img src={u.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                             ) : (
-                              <img src={u.avatarUrl || PRESET_AVATARS[0]} alt="Avatar" className="w-full h-full object-cover" />
+                              <User className="w-6 h-6 text-gray-400" />
                             )}
                           </div>
                           <div className="min-w-0">
