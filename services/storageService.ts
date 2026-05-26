@@ -232,18 +232,36 @@ export const getUserProfile = async (userId?: string): Promise<UserProfile | nul
   try {
     const docRef = doc(db, PROFILES_COLLECTION, userId);
     const docSnap = await getDoc(docRef);
+    const localProfile = getLocalProfile();
+    
     if (docSnap.exists()) {
       const data = docSnap.data();
+      
+      // Merge local custom domains with remote ones to prevent loss due to failed writes
+      const remoteDomains = data.customDomains || [];
+      const localDomains = localProfile?.customDomains || [];
+      const mergedDomains = Array.from(new Set([...remoteDomains, ...localDomains]));
+      
       const profile = {
         uid: userId,
         fullName: data.fullName || '',
         avatarUrl: data.avatarUrl || '',
-        customDomains: data.customDomains || [],
+        customDomains: mergedDomains,
         planType: data.planType || 'free',
         linkLimit: data.linkLimit !== undefined ? data.linkLimit : 100,
         clickLimit: data.clickLimit !== undefined ? data.clickLimit : 1000,
         role: data.role || 'user'
       } as UserProfile;
+      
+      // Auto-heal Firestore if local domains had items that didn't make it to remote
+      if (mergedDomains.length > remoteDomains.length) {
+        try {
+          await setDoc(docRef, { customDomains: mergedDomains }, { merge: true });
+        } catch (e) {
+          console.warn("Failed to auto-heal remote domains", e);
+        }
+      }
+      
       localStorage.setItem(PROFILE_LOCAL_KEY, JSON.stringify(profile));
       return profile;
     } else {
@@ -339,7 +357,60 @@ export const checkUserAuthorized = async (uid: string, email?: string): Promise<
     const lowerEmail = email ? email.trim().toLowerCase() : '';
     const isOwner = lowerEmail.includes('chanthy') || lowerEmail.includes('chant') || lowerEmail.endsWith('@idg.edu.kh') || lowerEmail === 'admin@gmail.com';
 
-    // 1. Owner bypass - Auto-register and authorize the owner as Admin
+    // 1. Check if a profile document exists with this UID FIRST so we don't overwrite it
+    const docRef = doc(db, PROFILES_COLLECTION, uid);
+    const docSnap = await getDoc(docRef);
+    
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      
+      // Merge local custom domains with remote ones
+      let localDomains: string[] = [];
+      try {
+        const local = localStorage.getItem(PROFILE_LOCAL_KEY);
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (parsed && parsed.uid === uid) {
+            localDomains = parsed.customDomains || [];
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+      
+      const remoteDomains = data.customDomains || [];
+      const mergedDomains = Array.from(new Set([...remoteDomains, ...localDomains]));
+
+      const profile = {
+        uid,
+        email: data.email || lowerEmail || '',
+        fullName: data.fullName || '',
+        avatarUrl: data.avatarUrl || '',
+        customDomains: mergedDomains,
+        planType: data.planType || 'free',
+        linkLimit: data.linkLimit !== undefined ? data.linkLimit : 100,
+        clickLimit: data.clickLimit !== undefined ? data.clickLimit : 1000,
+        role: data.role || 'user'
+      } as UserProfile;
+      
+      // Sync email or missing domains if needed
+      const updates: any = {};
+      if (!data.email && email) updates.email = lowerEmail;
+      if (mergedDomains.length > remoteDomains.length) updates.customDomains = mergedDomains;
+      
+      if (Object.keys(updates).length > 0) {
+        try {
+          await setDoc(docRef, updates, { merge: true });
+        } catch (e) {
+          console.warn("Failed to auto-heal profile on auth check", e);
+        }
+      }
+      
+      localStorage.setItem(PROFILE_LOCAL_KEY, JSON.stringify(profile));
+      return { authorized: true, profile };
+    }
+
+    // 2. Owner bypass - Auto-register and authorize the owner as Admin if doc doesn't exist
     if (isOwner) {
       const profile = {
         uid,
@@ -354,7 +425,6 @@ export const checkUserAuthorized = async (uid: string, email?: string): Promise<
       };
       
       try {
-        const docRef = doc(db, PROFILES_COLLECTION, uid);
         await setDoc(docRef, profile, { merge: true });
       } catch (err) {
         console.warn("Bypassed Firestore write warning for owner during initial auth handshake:", err);
@@ -364,13 +434,13 @@ export const checkUserAuthorized = async (uid: string, email?: string): Promise<
       return { authorized: true, profile };
     }
 
-    // 2. If no Admin profiles exist in the system, authorize this user as the System Administrator
+    // 3. If no Admin profiles exist in the system, authorize this new user as the System Administrator
     const qAdmins = query(collection(db, PROFILES_COLLECTION), where('role', '==', 'admin'));
     const adminSnapshot = await getDocs(qAdmins);
     if (adminSnapshot.empty) {
       const newProfile: UserProfile = {
         uid,
-        email: email || '',
+        email: lowerEmail || '',
         fullName: 'System Administrator',
         avatarUrl: '',
         customDomains: [],
@@ -379,40 +449,14 @@ export const checkUserAuthorized = async (uid: string, email?: string): Promise<
         clickLimit: 9999999,
         role: 'admin'
       };
-      await setDoc(doc(db, PROFILES_COLLECTION, uid), newProfile);
+      await setDoc(docRef, newProfile);
       localStorage.setItem(PROFILE_LOCAL_KEY, JSON.stringify(newProfile));
       return { authorized: true, profile: newProfile };
     }
 
-    // 2. Check if a profile document exists with this UID
-    const docRef = doc(db, PROFILES_COLLECTION, uid);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      const profile = {
-        uid,
-        email: data.email || email || '',
-        fullName: data.fullName || '',
-        avatarUrl: data.avatarUrl || '',
-        customDomains: data.customDomains || [],
-        planType: data.planType || 'free',
-        linkLimit: data.linkLimit !== undefined ? data.linkLimit : 100,
-        clickLimit: data.clickLimit !== undefined ? data.clickLimit : 1000,
-        role: data.role || 'user'
-      } as UserProfile;
-      
-      // Sync email if not present
-      if (!data.email && email) {
-        await setDoc(docRef, { email }, { merge: true });
-      }
-      
-      localStorage.setItem(PROFILE_LOCAL_KEY, JSON.stringify(profile));
-      return { authorized: true, profile };
-    }
-
-    // 3. Check if there is a pre-registered profile doc with this EMAIL
-    if (email) {
-      const q = query(collection(db, PROFILES_COLLECTION), where('email', '==', email.trim().toLowerCase()));
+    // 4. Check if there is a pre-registered profile doc with this EMAIL
+    if (lowerEmail) {
+      const q = query(collection(db, PROFILES_COLLECTION), where('email', '==', lowerEmail));
       const querySnapshot = await getDocs(q);
       if (!querySnapshot.empty) {
         const preDoc = querySnapshot.docs[0];
@@ -420,7 +464,7 @@ export const checkUserAuthorized = async (uid: string, email?: string): Promise<
         
         const profile: UserProfile = {
           uid,
-          email: email.trim().toLowerCase(),
+          email: lowerEmail,
           fullName: preData.fullName || '',
           avatarUrl: preData.avatarUrl || '',
           customDomains: preData.customDomains || [],
@@ -450,6 +494,25 @@ export const checkUserAuthorized = async (uid: string, email?: string): Promise<
     const isOwner = lowerEmail.includes('chanthy') || lowerEmail.includes('chant') || lowerEmail.endsWith('@idg.edu.kh') || lowerEmail === 'admin@gmail.com';
     
     if (isOwner) {
+      // Don't overwrite local storage if we already have it!
+      try {
+        const local = localStorage.getItem(PROFILE_LOCAL_KEY);
+        if (local) {
+          const existingLocal = JSON.parse(local);
+          if (existingLocal && existingLocal.uid === uid) {
+            // Merge with owner defaults just in case, but keep existing customDomains
+            const profile = {
+              ...existingLocal,
+              role: 'admin'
+            };
+            localStorage.setItem(PROFILE_LOCAL_KEY, JSON.stringify(profile));
+            return { authorized: true, profile };
+          }
+        }
+      } catch (e) {
+        // ignore JSON parse error
+      }
+
       const profile = {
         uid,
         email: lowerEmail,
