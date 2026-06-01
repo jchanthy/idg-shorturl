@@ -99,13 +99,17 @@ export const CreateLink: React.FC<CreateLinkProps> = ({ onSave, userId, customDo
       domain: selectedDomain
     };
 
-    // 2. Save and switch view
-    onSave(newLink);
-    setCurrentLink(newLink);
-    setEditAlias(alias);
-    setMode('success');
-    setError(null);
-    setShowQr(activeTab === 'qr');
+    try {
+      // 2. Save and switch view
+      await onSave(newLink);
+      setCurrentLink(newLink);
+      setEditAlias(alias);
+      setMode('success');
+      setError(null);
+      setShowQr(activeTab === 'qr');
+    } catch (e: any) {
+      setError("Failed to create link: " + e.message);
+    }
   };
 
   const handleUpdateAlias = async () => {

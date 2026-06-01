@@ -134,6 +134,7 @@ export const saveLink = async (link: ShortLink, userId?: string): Promise<void> 
   } catch (error: any) {
     console.error("Error saving link to Firestore:", error);
     alert(`CRITICAL ERROR: Failed to save to Database! Your browser or adblocker might be blocking Firebase. Error: ${error.message}`);
+    throw error;
   }
 };
 
