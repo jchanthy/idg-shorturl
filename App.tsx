@@ -15,7 +15,7 @@ import { LinksList } from './components/LinksList';
 import { CreateLink } from './components/CreateLink';
 import { LoginPage } from './components/LoginPage';
 import { UserProfile } from './components/UserProfile';
-import { getLinks, saveLink, deleteLink, recordClick, clearAllLinks, getUserProfile, saveUserProfile, checkUserAuthorized } from './services/storageService';
+import { getLinks, saveLink, deleteLink, recordClick, clearAllLinks, getUserProfile, saveUserProfile, checkUserAuthorized, getLinkByAlias } from './services/storageService';
 import { ShortLink, UserProfile as UserProfileType } from './types';
 import { auth } from './services/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
@@ -73,13 +73,19 @@ const App: React.FC = () => {
     if (authLoading) return;
 
     const checkRedirection = async () => {
+      let alias = '';
       const hash = window.location.hash;
+      const pathname = window.location.pathname;
+
       if (hash.startsWith('#/') && hash.length > 2) {
-        const alias = hash.substring(2);
-        
-        // Fetch current links list to resolve redirection
-        const storedLinks = await getLinks(user?.uid);
-        const targetLink = storedLinks.find(l => l.alias === alias);
+        alias = hash.substring(2);
+      } else if (pathname.length > 1 && pathname !== '/') {
+        alias = pathname.substring(1);
+      }
+      
+      if (alias) {
+        // Fetch current link directly by alias to resolve redirection
+        const targetLink = await getLinkByAlias(alias);
 
         if (targetLink) {
           // Check expiration

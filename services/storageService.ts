@@ -80,6 +80,34 @@ export const getLinks = async (userId?: string): Promise<ShortLink[]> => {
   }
 };
 
+export const getLinkByAlias = async (alias: string): Promise<ShortLink | null> => {
+  try {
+    const q = query(collection(db, COLLECTION_NAME), where('alias', '==', alias));
+    const snapshot = await getDocs(q);
+    if (!snapshot.empty) {
+      const docSnap = snapshot.docs[0];
+      const data = docSnap.data();
+      return {
+        id: docSnap.id,
+        originalUrl: data.originalUrl,
+        alias: data.alias,
+        createdAt: data.createdAt,
+        totalClicks: data.totalClicks || 0,
+        clickHistory: data.clickHistory || [],
+        tags: data.tags || [],
+        expiresAt: data.expiresAt,
+        domain: data.domain
+      } as ShortLink;
+    }
+  } catch (error) {
+    console.error("Error fetching link by alias from Firestore:", error);
+  }
+  
+  // Fallback to local
+  const localLinks = getLocalLinks();
+  return localLinks.find(l => l.alias === alias) || null;
+};
+
 export const saveLink = async (link: ShortLink, userId?: string): Promise<void> => {
   saveLocalLink(link); // Always save locally as robust cache/backup
   if (!userId) return;
