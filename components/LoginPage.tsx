@@ -4,7 +4,7 @@ import { auth } from '../services/firebase';
 import { 
   signInWithEmailAndPassword, 
   GoogleAuthProvider,
-  signInWithRedirect
+  signInWithPopup
 } from 'firebase/auth';
 
 interface LoginPageProps {
@@ -23,12 +23,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      // Use redirect instead of popup to bypass strict browser popup/cookie blockers
-      await signInWithRedirect(auth, provider);
-      // Note: onLogin() will be called by App.tsx's onAuthStateChanged listener after the redirect finishes
+      await signInWithPopup(auth, provider);
+      onLogin();
     } catch (err: any) {
       console.error(err);
-      setError('Google Sign-In failed to redirect.');
+      let friendlyError = 'Google Sign-In failed.';
+      if (err.code === 'auth/popup-closed-by-user') {
+        friendlyError = 'Sign-in popup closed before completion.';
+      } else if (err.code === 'auth/cancelled-popup-request') {
+        friendlyError = 'Sign-in popup was cancelled.';
+      }
+      setError(friendlyError);
     } finally {
       setLoading(false);
     }
