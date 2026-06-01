@@ -110,7 +110,10 @@ export const getLinkByAlias = async (alias: string): Promise<ShortLink | null> =
 
 export const saveLink = async (link: ShortLink, userId?: string): Promise<void> => {
   saveLocalLink(link); // Always save locally as robust cache/backup
-  if (!userId) return;
+  if (!userId) {
+    alert("CRITICAL ERROR: Cannot save link to database because you are not logged in or your session expired!");
+    return;
+  }
 
   try {
     const linkDocRef = doc(db, COLLECTION_NAME, link.id);
@@ -118,8 +121,9 @@ export const saveLink = async (link: ShortLink, userId?: string): Promise<void> 
       ...link,
       userId
     }, { merge: true });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error saving link to Firestore:", error);
+    alert(`CRITICAL ERROR: Failed to save to Database! Your browser or adblocker might be blocking Firebase. Error: ${error.message}`);
   }
 };
 
