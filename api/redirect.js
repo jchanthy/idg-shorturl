@@ -10,8 +10,13 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Missing VITE_FIREBASE_PROJECT_ID environment variable", envKeys: Object.keys(process.env) });
     }
 
+    const apiKey = process.env.VITE_FIREBASE_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: "Missing VITE_FIREBASE_API_KEY environment variable" });
+    }
+
     // 1. Query Firestore via REST API to find the short link by alias
-    const queryUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery`;
+    const queryUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery?key=${apiKey}`;
     
     const queryBody = {
       structuredQuery: {
