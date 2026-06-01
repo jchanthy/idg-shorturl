@@ -9,7 +9,7 @@
       "destination": "/assets/$1"
     },
     {
-      "source": "/(?<alias>[a-zA-Z0-9_-]{3,})",
+      "source": "/:alias",
       "destination": "/api/redirect?alias=$alias"
     },
     {
