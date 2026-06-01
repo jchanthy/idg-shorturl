@@ -9,7 +9,7 @@
       "destination": "/assets/$1"
     },
     {
-      "source": "/:alias",
+      "source": "/(?<alias>[^/]+)",
       "destination": "/api/redirect?alias=$alias"
     },
     {
