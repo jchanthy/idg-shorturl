@@ -218,7 +218,7 @@ export const LinksList: React.FC<LinksListProps> = ({ links, onDelete, onSimulat
           filteredLinks.map((link) => {
             const shortUrl = link.domain && link.domain !== window.location.host
               ? `https://${link.domain}/${link.alias}`
-              : `${origin}/#/${link.alias}`;
+              : `${origin}/${link.alias}`;
             const isQrOpen = activeQrId === link.id;
             const isEditingTags = editingLinkId === link.id;
 
@@ -253,7 +253,7 @@ export const LinksList: React.FC<LinksListProps> = ({ links, onDelete, onSimulat
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-2">
                         <a 
-                          href={`/#/${link.alias}`} 
+                          href={`/${link.alias}`} 
                           target="_blank"
                           rel="noreferrer"
                           className="font-extrabold text-brand-primary hover:text-brand-primary/80 text-lg hover:underline truncate"

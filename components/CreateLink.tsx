@@ -139,9 +139,7 @@ export const CreateLink: React.FC<CreateLinkProps> = ({ onSave, userId, customDo
     if (!currentLink) return;
     const isCustom = selectedDomain !== host;
     const targetOrigin = isCustom ? `https://${selectedDomain}` : origin;
-    const fullUrl = isCustom 
-      ? `${targetOrigin}/${currentLink.alias}` 
-      : `${targetOrigin}/#/${currentLink.alias}`;
+    const fullUrl = `${targetOrigin}/${currentLink.alias}`;
     navigator.clipboard.writeText(fullUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -341,7 +339,7 @@ export const CreateLink: React.FC<CreateLinkProps> = ({ onSave, userId, customDo
         <div className="flex flex-col md:flex-row items-center gap-2">
           <div className="flex-1 w-full md:w-auto px-4 py-3 flex items-center">
             <span className="text-gray-400 font-medium mr-1 select-none">
-              {selectedDomain === host ? `${host}/#/` : `${selectedDomain}/`}
+              {selectedDomain === host ? `${host}/` : `${selectedDomain}/`}
             </span>
             
             {isEditing ? (
@@ -422,19 +420,19 @@ export const CreateLink: React.FC<CreateLinkProps> = ({ onSave, userId, customDo
       {showQr && (
         <div className="mt-6 p-6 bg-white border-2 border-dashed border-gray-200 rounded-none flex flex-col items-center animate-fade-in">
           <img 
-            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(selectedDomain === host ? `${origin}/#/${currentLink?.alias || ''}` : `https://${selectedDomain}/${currentLink?.alias || ''}`)}&bgcolor=ffffff`} 
+            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(selectedDomain === host ? `${origin}/${currentLink?.alias || ''}` : `https://${selectedDomain}/${currentLink?.alias || ''}`)}&bgcolor=ffffff`} 
             alt="QR Code" 
             className="w-48 h-48 rounded-none mb-4 mix-blend-multiply"
           />
           <p className="text-sm text-gray-500 mt-2 text-center max-w-xs break-all">
             Scan to visit short link <br/>
             <span className="font-mono text-brand-primary font-bold">
-              {selectedDomain === host ? `${host}/#/${currentLink?.alias}` : `${selectedDomain}/${currentLink?.alias}`}
+              {selectedDomain === host ? `${host}/${currentLink?.alias}` : `${selectedDomain}/${currentLink?.alias}`}
             </span>
           </p>
           <button 
              onClick={() => {
-                window.open(`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(selectedDomain === host ? `${origin}/#/${currentLink?.alias || ''}` : `https://${selectedDomain}/${currentLink?.alias || ''}`)}`, '_blank');
+                window.open(`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(selectedDomain === host ? `${origin}/${currentLink?.alias || ''}` : `https://${selectedDomain}/${currentLink?.alias || ''}`)}`, '_blank');
              }}
              className="mt-4 text-xs font-bold text-brand-primary hover:underline"
           >
