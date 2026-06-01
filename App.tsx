@@ -18,7 +18,7 @@ import { UserProfile } from './components/UserProfile';
 import { getLinks, saveLink, deleteLink, recordClick, clearAllLinks, getUserProfile, saveUserProfile, checkUserAuthorized, getLinkByAlias } from './services/storageService';
 import { ShortLink, UserProfile as UserProfileType } from './types';
 import { auth } from './services/firebase';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onAuthStateChanged, signOut, getRedirectResult } from 'firebase/auth';
 import type { User as FirebaseUser } from 'firebase/auth';
 
 const App: React.FC = () => {
@@ -39,6 +39,17 @@ const App: React.FC = () => {
 
   // 1. Listen to Authentication State and enforce pre-registration checking!
   useEffect(() => {
+    // Process redirect result (required for signInWithRedirect)
+    getRedirectResult(auth).catch((error) => {
+      console.error("Redirect Error:", error);
+      let msg = "Google Login Failed. ";
+      if (error.code === 'auth/unauthorized-domain') {
+        msg += "Your Google Cloud API Key is blocking the Vercel domain.";
+      }
+      setAuthError(msg + " (" + error.message + ")");
+      setAuthLoading(false);
+    });
+
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         setAuthLoading(true);
