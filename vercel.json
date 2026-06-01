@@ -1,6 +1,18 @@
 {
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
+    {
+      "source": "/assets/(.*)",
+      "destination": "/assets/$1"
+    },
+    {
+      "source": "/(?<alias>[a-zA-Z0-9_-]{3,})",
+      "destination": "/api/redirect?alias=$alias"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
