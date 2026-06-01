@@ -117,10 +117,20 @@ export const saveLink = async (link: ShortLink, userId?: string): Promise<void> 
 
   try {
     const linkDocRef = doc(db, COLLECTION_NAME, link.id);
-    await setDoc(linkDocRef, {
+    
+    // Firestore does not support 'undefined' values, so we must clean the data
+    const firestoreData: any = {
       ...link,
       userId
-    }, { merge: true });
+    };
+    
+    Object.keys(firestoreData).forEach(key => {
+      if (firestoreData[key] === undefined) {
+        delete firestoreData[key];
+      }
+    });
+
+    await setDoc(linkDocRef, firestoreData, { merge: true });
   } catch (error: any) {
     console.error("Error saving link to Firestore:", error);
     alert(`CRITICAL ERROR: Failed to save to Database! Your browser or adblocker might be blocking Firebase. Error: ${error.message}`);
