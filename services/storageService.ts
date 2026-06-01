@@ -69,6 +69,8 @@ export const getLinks = async (userId?: string): Promise<ShortLink[]> => {
     localLinks.forEach(localLink => {
       if (!mergedLinks.some(fl => fl.id === localLink.id)) {
         mergedLinks.push(localLink);
+        // Silently sync missing local links up to Firestore in the background (fixes the 'undefined' orphaned links)
+        saveLink(localLink, userId).catch(e => console.error("Auto-sync failed", e));
       }
     });
 
