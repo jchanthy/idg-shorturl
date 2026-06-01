@@ -42,7 +42,7 @@ export default async function handler(req, res) {
     
     // If empty result, Firestore returns an array with just { readTime: '...' }
     if (!data || data.length === 0 || !data[0].document) {
-      return res.status(404).json({ error: "Link not found in database", alias: alias, rawData: data });
+      return res.status(404).json({ error: "Link not found in database", alias: alias, projectId: projectId, rawData: data });
     }
 
     const doc = data[0].document;
