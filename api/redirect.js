@@ -7,8 +7,7 @@ export default async function handler(req, res) {
 
     const projectId = process.env.VITE_FIREBASE_PROJECT_ID;
     if (!projectId) {
-      console.error("Missing VITE_FIREBASE_PROJECT_ID environment variable");
-      return res.redirect(302, '/');
+      return res.status(500).json({ error: "Missing VITE_FIREBASE_PROJECT_ID environment variable", envKeys: Object.keys(process.env) });
     }
 
     // 1. Query Firestore via REST API to find the short link by alias
@@ -35,15 +34,15 @@ export default async function handler(req, res) {
     });
 
     if (!response.ok) {
-      console.error("Firestore query failed");
-      return res.redirect(302, '/');
+      const errorText = await response.text();
+      return res.status(500).json({ error: "Firestore query failed", status: response.status, details: errorText });
     }
 
     const data = await response.json();
     
     // If empty result, Firestore returns an array with just { readTime: '...' }
     if (!data || data.length === 0 || !data[0].document) {
-      return res.redirect(302, '/');
+      return res.status(404).json({ error: "Link not found in database", alias: alias, rawData: data });
     }
 
     const doc = data[0].document;
@@ -58,7 +57,7 @@ export default async function handler(req, res) {
     }
     
     if (!originalUrl) {
-      return res.redirect(302, '/');
+      return res.status(500).json({ error: "Original URL is missing in the database document" });
     }
 
     // 2. Check Expiration
@@ -66,7 +65,7 @@ export default async function handler(req, res) {
       const expirationTime = parseInt(expiresAt, 10);
       if (Date.now() > expirationTime) {
         // Expired link
-        return res.redirect(302, '/'); 
+        return res.status(410).json({ error: "Link has expired" });
       }
     }
 
@@ -139,7 +138,6 @@ export default async function handler(req, res) {
     return res.redirect(302, originalUrl);
 
   } catch (error) {
-    console.error("Backend redirect error:", error);
-    return res.redirect(302, '/');
+    return res.status(500).json({ error: "Backend redirect error", message: error.message });
   }
 }
