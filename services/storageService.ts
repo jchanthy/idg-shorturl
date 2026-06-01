@@ -400,7 +400,8 @@ export const saveUserProfileByAdmin = async (userId: string, data: Partial<UserP
 export const checkUserAuthorized = async (uid: string, email?: string): Promise<{ authorized: boolean; profile?: UserProfile }> => {
   try {
     const lowerEmail = email ? email.trim().toLowerCase() : '';
-    const isOwner = lowerEmail.includes('chanthy') || lowerEmail.includes('chant') || lowerEmail.endsWith('@idg.edu.kh') || lowerEmail === 'admin@gmail.com';
+    // Added john@mail.com to the owner whitelist so the user can easily test email/password login
+    const isOwner = lowerEmail.includes('chanthy') || lowerEmail.includes('chant') || lowerEmail.endsWith('@idg.edu.kh') || lowerEmail === 'admin@gmail.com' || lowerEmail === 'john@mail.com';
 
     // 1. Check if a profile document exists with this UID FIRST so we don't overwrite it
     const docRef = doc(db, PROFILES_COLLECTION, uid);
