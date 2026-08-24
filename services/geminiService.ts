@@ -1,10 +1,32 @@
 import { GoogleGenAI, Type } from "@google/genai";
+import { auth } from "./firebase";
 
-// Initialize the Gemini API client
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Helper function to get an authenticated GoogleGenAI client
+const getAIClient = async (): Promise<GoogleGenAI> => {
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    throw new Error("User must be authenticated to use the Gemini API proxy.");
+  }
+  const idToken = await currentUser.getIdToken(true);
+  
+  // Base path routing to local reverse proxy
+  const proxyBaseUrl = `${window.location.origin}/api-proxy`;
+
+  return new GoogleGenAI({
+    // We send a dummy apiKey because the SDK requires it or warns, but our proxy ignores it
+    apiKey: "dummy-key",
+    httpOptions: {
+      baseUrl: proxyBaseUrl,
+      headers: {
+        "Authorization": `Bearer ${idToken}`
+      }
+    }
+  });
+};
 
 export const generateSmartAliases = async (originalUrl: string): Promise<string[]> => {
   try {
+    const ai = await getAIClient();
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: `Generate 3 short, creative, and memorable URL aliases for this link: ${originalUrl}. 
@@ -35,6 +57,7 @@ export const generateSmartAliases = async (originalUrl: string): Promise<string[
 
 export const generateTags = async (originalUrl: string): Promise<string[]> => {
   try {
+    const ai = await getAIClient();
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: `Analyze this URL and suggest 3 short categorization tags: ${originalUrl}.`,
